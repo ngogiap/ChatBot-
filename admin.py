@@ -6,12 +6,12 @@ import os
 from style import apply_styles
 from components import (
     sidebar_user_card, admin_header, stat_card,
-    collection_card, doc_card, breadcrumb, section_title
+    collection_card, breadcrumb, section_title
 )
 from embedding import (
     add_document, delete_document, delete_chunk, update_chunk,
     add_chunk_manual, insert_chunk, list_documents, list_chunks,
-    preview_chunks, get_doc_config, get_collection_stats,
+     get_doc_config, get_collection_stats,
     delete_collection_data, CHUNK_METHODS, EMBEDDING_MODELS
 )
 from database import (
@@ -530,7 +530,7 @@ def _page_config():
         help="Thấp = trả lời chính xác hơn | Cao = sáng tạo hơn"
     )
 
-    # ====================== API KEY (chỉ hiện với Gemini) ======================
+    # ====================== API KEY ======================
     api_key = ""
     if provider in ["gemini", "groq"]:
         section_title("🔑 API Key")

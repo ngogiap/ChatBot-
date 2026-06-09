@@ -9,7 +9,7 @@ import easyocr
 from pdf2image import convert_from_path
 import cv2
 import numpy as np
-from config import load_config   # Đọc cấu hình mặc định
+from config import load_config   
 
 DATA_PATH      = "data"
 VECTOR_DB_PATH = "vectorstores/chroma"
@@ -22,17 +22,10 @@ _ocr_instance = None
 def get_ocr():
     global _ocr_instance
     if _ocr_instance is None:
-        # PaddleOCR v3+ bỏ tham số show_log, dùng logging module để tắt log
         _ocr_instance = easyocr.Reader(['vi', 'en'], gpu=False)
     return _ocr_instance
 
 def _safe_collection(name: str) -> str:
-    """
-    Chuẩn hóa tên collection cho ChromaDB:
-    - Chỉ giữ [a-zA-Z0-9._-]
-    - Bắt đầu và kết thúc bằng [a-zA-Z0-9]
-    - Độ dài 3-512 ký tự
-    """
     import unicodedata
     # Bỏ dấu tiếng Việt
     name = unicodedata.normalize("NFD", name)
@@ -62,7 +55,7 @@ def get_vector_db(collection_name="default", embed_model="nomic-embed-text"):
     os.makedirs(VECTOR_DB_PATH, exist_ok=True)
     return Chroma(
         persist_directory=VECTOR_DB_PATH,
-        collection_name=_safe_collection(collection_name),     # ← mỗi kho là 1 collection riêng
+        collection_name=_safe_collection(collection_name),     
         embedding_function=OllamaEmbeddings(model=embed_model)
     )
 
@@ -126,10 +119,6 @@ CHUNK_METHODS = {
 }
 # xử lý ảnh
 def preprocess_image(img_rgb: np.ndarray) -> np.ndarray:
-    """
-    Làm sạch ảnh để tăng độ chính xác OCR.
-    EasyOCR nhận ảnh RGB numpy array trực tiếp — không cần convert kênh.
-    """
     gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
  
     # CLAHE tăng tương phản cục bộ — tốt hơn equalizeHist cho văn bản
@@ -147,7 +136,6 @@ def preprocess_image(img_rgb: np.ndarray) -> np.ndarray:
 # ─── Thêm tài liệu — thêm collection_name ────────────────────────────────────
 
 def add_document(filename, collection_name, method=None, chunk_size=None, chunk_overlap=None, embed_model=None):
-    # Nếu không truyền tham số thì đọc từ config.json
     cfg          = load_config()
     method       = method       or cfg["chunk_method"]
     chunk_size   = chunk_size   or cfg["chunk_size"]
@@ -179,13 +167,13 @@ def add_document(filename, collection_name, method=None, chunk_size=None, chunk_
         images = convert_from_path(
             file_path,
             dpi=300,
-            poppler_path=POPPLER_PATH,   # ← trỏ thẳng, không cần sửa PATH hệ thống
+            poppler_path=POPPLER_PATH,   
         )
  
         for i, img in enumerate(images):
             try:
-                img_np    = np.array(img)               # PIL → numpy RGB
-                processed = preprocess_image(img_np)    # → BGR 3 kênh
+                img_np    = np.array(img)               
+                processed = preprocess_image(img_np)    
  
                 lines = ocr.readtext(processed, detail=0, paragraph=True)
  
@@ -208,8 +196,7 @@ def add_document(filename, collection_name, method=None, chunk_size=None, chunk_
             print("❌ Không OCR được trang nào — kiểm tra lại file PDF")
             return 0
  
-        docs = ocr_docs   # ← gán lại, không dùng docs gốc chứa trang rỗng
- 
+        docs = ocr_docs  
 
     chunk_fn  = CHUNK_METHODS.get(method, _chunk_by_size)
     chunks    = chunk_fn(docs, chunk_size, chunk_overlap)
@@ -310,11 +297,6 @@ def insert_chunk(filename, collection_name, content, insert_at, position="after"
     """
     Chèn chunk mới vào trước hoặc sau chunk tại vị trí insert_at.
     position: "before" hoặc "after"
- 
-    Cách hoạt động:
-    - Lấy toàn bộ chunks, sắp xếp theo chunk_index
-    - Chèn chunk mới vào đúng vị trí
-    - Cập nhật lại chunk_index cho toàn bộ chunks
     """
     db      = get_vector_db(collection_name)
     results = db._collection.get(

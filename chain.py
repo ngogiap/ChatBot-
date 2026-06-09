@@ -44,7 +44,6 @@ def load_llm():
                 model=model or "gemini-2.5-flash",
                 temperature=temperature,
                 google_api_key=api_key,
-                # convert_system_message_to_human=True,   # Bỏ comment nếu gặp lỗi prompt
             )
             print(f"✅ Đã load Gemini model: {model}")
             
